@@ -12,37 +12,24 @@ const fs = require('fs');
 mongoose.connect('mongodb+srv://codexabhijit:AbhijiT%402003@cluster0.dsiyd.mongodb.net/arts', {
     useNewUrlParser: true,
     useUnifiedTopology: true
-});
+})
+.then(() => console.log('Connected to MongoDB'))
+.catch(err => console.error('MongoDB connection error:', err));
 
 // Define the Admin and Image schemas
 const adminSchema = new mongoose.Schema({
-    username: String,
-    password: {
-        type: String,
-        required: true
-    }
+    username: { type: String, required: true },
+    password: { type: String, required: true }
 });
 
-// Hash password before saving the admin
-adminSchema.pre('save', async function(next) {
-    if (this.isModified('password') || this.isNew) {
-        try {
-            const hashedPassword = await bcrypt.hash(this.password, 10);
-            this.password = hashedPassword;
-            next();
-        } catch (err) {
-            next(err);
-        }
-    } else {
-        return next();
-    }
-});
+
+
+const Admin = mongoose.model('Admin', adminSchema);
 
 const imageSchema = new mongoose.Schema({
     path: String
 });
 
-const Admin = mongoose.model('Admin', adminSchema);
 const Image = mongoose.model('Image', imageSchema);
 
 // Ensure only one admin user is created
@@ -50,17 +37,15 @@ const Image = mongoose.model('Image', imageSchema);
     try {
         const adminExists = await Admin.findOne({ username: 'abhijit570' });
         if (!adminExists) {
-            const hashedPassword = await bcrypt.hash('123123', 10);
-            
+            // const hashedPassword = await bcrypt.hash('123123', 10);
             const admin = new Admin({
                 username: 'abhijit570',
-                password: hashedPassword
+                password: '123123'
             });
-            
             await admin.save();
         }
     } catch (err) {
-        console.error(err);
+        console.error('Error creating admin:', err);
     } finally {
         app.listen(3000, () => {
             console.log('Server started on http://localhost:3000');
@@ -111,29 +96,33 @@ app.get('/', (req, res) => {
 
 // Admin Login Page
 app.get('/admin/login', (req, res) => {
-    res.render('admin-login');
+    res.render('admin-login', { error: req.flash('error') });
 });
 
 // Admin Login Logic
 app.post('/admin/login', async (req, res) => {
     const { username, password } = req.body;
+    console.log(password);
     try {
         const admin = await Admin.findOne({ username });
-        // console.log(admin);
-        
         if (admin) {
-            const isMatch = await bcrypt.compare(password, admin.password);
-            // console.log(isMatch);
+            console.log(admin.password);
+            
+            // const isMatch = await bcrypt.compare(password, admin.password);
+            const isMatch = password===admin.password
             if (isMatch) {
                 req.session.isAdmin = true;
                 return res.redirect('/admin/dashboard');
+            } else {
+                req.flash('error', 'Invalid credentials');
+                return res.redirect('/admin/login');
             }
+        } else {
+            req.flash('error', 'Invalid credentials');
+            return res.redirect('/admin/login');
         }
-        
-        req.flash('error', 'Invalid credentials');
-        res.redirect('/admin/login');
     } catch (err) {
-        console.error(err);
+        console.error('Login error:', err);
         res.sendStatus(500);
     }
 });
@@ -144,7 +133,7 @@ app.get('/admin/dashboard', isAuthenticated, async (req, res) => {
         const images = await Image.find({});
         res.render('admin-dashboard', { images });
     } catch (err) {
-        console.error(err);
+        console.error('Error loading dashboard:', err);
         res.sendStatus(500);
     }
 });
@@ -156,7 +145,7 @@ app.post('/admin/upload', isAuthenticated, upload.single('image'), async (req, r
         await image.save();
         res.redirect('/admin/dashboard');
     } catch (err) {
-        console.error(err);
+        console.error('Error uploading image:', err);
         res.sendStatus(500);
     }
 });
@@ -167,7 +156,7 @@ app.post('/show-random-photo', async (req, res) => {
         const [image] = await Image.aggregate([{ $sample: { size: 1 } }]);
         res.render('index', { image });
     } catch (err) {
-        console.error(err);
+        console.error('Error showing random photo:', err);
         res.sendStatus(500);
     }
 });
@@ -176,7 +165,7 @@ app.post('/show-random-photo', async (req, res) => {
 app.get('/admin/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
-            console.error(err);
+            console.error('Logout error:', err);
             return res.sendStatus(500);
         }
         res.redirect('/admin/login');
@@ -188,15 +177,12 @@ app.post('/admin/delete/:id', isAuthenticated, async (req, res) => {
     try {
         const image = await Image.findById(req.params.id);
         if (image) {
-            // Delete file from server
             fs.unlinkSync(path.join(__dirname, 'public', image.path));
-
-            // Delete image record from database
             await Image.findByIdAndDelete(req.params.id);
         }
         res.redirect('/admin/dashboard');
     } catch (err) {
-        console.error(err);
+        console.error('Error deleting image:', err);
         res.sendStatus(500);
     }
 });
