@@ -9,7 +9,7 @@ const bcrypt = require('bcrypt');
 const fs = require('fs');
 
 // Connect to MongoDB
-mongoose.connect('mongodb+srv://codexabhijit:AbhijiT%402003@cluster0.dsiyd.mongodb.net/photo-urls', {
+mongoose.connect('mongodb+srv://codexabhijit:AbhijiT%402003@cluster0.dsiyd.mongodb.net/arts', {
     useNewUrlParser: true,
     useUnifiedTopology: true
 });
