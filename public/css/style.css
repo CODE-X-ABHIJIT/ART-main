@@ -1,0 +1,7 @@
+/* public/css/styles.css */
+
+#randomPhoto {
+    max-width: 100%; /* Ensures the image does not exceed container width */
+    max-height: 80vh; /* Limits the height of the image to 80% of viewport height */
+    object-fit: contain; /* Keeps the aspect ratio intact while fitting the image */
+}
