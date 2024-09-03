@@ -150,9 +150,11 @@ app.post('/admin/upload', isAuthenticated, upload.single('image'), async (req, r
     }
 });
 
+
 // Show Random Photo Logic
 app.post('/show-random-photo', async (req, res) => {
     try {
+        // Fetch a random image from the database
         const [image] = await Image.aggregate([{ $sample: { size: 1 } }]);
         res.render('index', { image });
     } catch (err) {
@@ -160,6 +162,7 @@ app.post('/show-random-photo', async (req, res) => {
         res.sendStatus(500);
     }
 });
+
 
 // Admin Logout Route
 app.get('/admin/logout', (req, res) => {
