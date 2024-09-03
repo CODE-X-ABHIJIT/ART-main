@@ -151,15 +151,28 @@ app.post('/admin/upload', isAuthenticated, upload.single('image'), async (req, r
 });
 
 // Show Random Photo Logic
-app.post('/show-random-photo', async (req, res) => {
-    try {
-        const [image] = await Image.aggregate([{ $sample: { size: 1 } }]);
+app.post('/show-random-photo', (req, res) => {
+    const uploadDir = path.join(__dirname, 'public', 'uploads');
+
+    fs.readdir(uploadDir, (err, files) => {
+        if (err) {
+            console.error('Error reading directory:', err);
+            return res.sendStatus(500);
+        }
+
+        if (files.length === 0) {
+            return res.render('index', { image: null });
+        }
+
+        // Randomly select an image
+        const randomFile = files[Math.floor(Math.random() * files.length)];
+        const image = { path: '/uploads/' + randomFile };
+
         res.render('index', { image });
-    } catch (err) {
-        console.error('Error showing random photo:', err);
-        res.sendStatus(500);
-    }
+    });
 });
+
+
 
 // Admin Logout Route
 app.get('/admin/logout', (req, res) => {
