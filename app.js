@@ -106,9 +106,6 @@ app.post('/admin/login', async (req, res) => {
     try {
         const admin = await Admin.findOne({ username });
         if (admin) {
-            // console.log(admin.password);
-            
-            // const isMatch = await bcrypt.compare(password, admin.password);
             const isMatch = password===admin.password
             if (isMatch) {
                 req.session.isAdmin = true;
