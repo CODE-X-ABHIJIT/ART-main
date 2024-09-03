@@ -106,7 +106,7 @@ app.post('/admin/login', async (req, res) => {
     try {
         const admin = await Admin.findOne({ username });
         if (admin) {
-            console.log(admin.password);
+            // console.log(admin.password);
             
             // const isMatch = await bcrypt.compare(password, admin.password);
             const isMatch = password===admin.password
@@ -128,15 +128,21 @@ app.post('/admin/login', async (req, res) => {
 });
 
 // Admin Dashboard Page
-app.get('/admin/dashboard', isAuthenticated, async (req, res) => {
-    try {
-        const images = await Image.find({});
+app.get('/admin/dashboard', isAuthenticated, (req, res) => {
+    const uploadsDir = path.join(__dirname, 'public', 'uploads');
+
+    fs.readdir(uploadsDir, (err, files) => {
+        if (err) {
+            console.error('Error reading uploads directory:', err);
+            return res.sendStatus(500);
+        }
+
+        const images = files.map(file => '/uploads/' + file);
         res.render('admin-dashboard', { images });
-    } catch (err) {
-        console.error('Error loading dashboard:', err);
-        res.sendStatus(500);
-    }
+    });
 });
+
+
 
 // Image Upload Logic
 app.post('/admin/upload', isAuthenticated, upload.single('image'), async (req, res) => {
