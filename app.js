@@ -130,23 +130,13 @@ app.post('/admin/login', async (req, res) => {
 // Admin Dashboard Page
 app.get('/admin/dashboard', isAuthenticated, async (req, res) => {
     try {
-        // Fetch images stored in the database
-        const imagesFromDb = await Image.find({});
-
-        // Fetch images stored in the uploads directory
-        const imagesFromUploads = fs.readdirSync(path.join(__dirname, 'public/uploads'))
-            .map(filename => ({ path: '/uploads/' + filename }));
-
-        // Combine both sources of images
-        const images = [...imagesFromDb, ...imagesFromUploads];
-
+        const images = await Image.find({});
         res.render('admin-dashboard', { images });
     } catch (err) {
         console.error('Error loading dashboard:', err);
         res.sendStatus(500);
     }
 });
-
 
 // Image Upload Logic
 app.post('/admin/upload', isAuthenticated, upload.single('image'), async (req, res) => {
@@ -160,11 +150,9 @@ app.post('/admin/upload', isAuthenticated, upload.single('image'), async (req, r
     }
 });
 
-
 // Show Random Photo Logic
 app.post('/show-random-photo', async (req, res) => {
     try {
-        // Fetch a random image from the database
         const [image] = await Image.aggregate([{ $sample: { size: 1 } }]);
         res.render('index', { image });
     } catch (err) {
@@ -172,7 +160,6 @@ app.post('/show-random-photo', async (req, res) => {
         res.sendStatus(500);
     }
 });
-
 
 // Admin Logout Route
 app.get('/admin/logout', (req, res) => {
